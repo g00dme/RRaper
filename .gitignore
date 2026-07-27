@@ -8,6 +8,8 @@ wheels/
 
 #Personal
 config.json
+*.log
+*.db
 
 # Virtual environments
 .venv
