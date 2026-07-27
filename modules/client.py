@@ -1,3 +1,4 @@
+from re import L
 import time
 
 import httpx
@@ -6,14 +7,14 @@ import logging
 logger=logging.getLogger(__name__)
 
 class Crient:
-    def __init__(self,base_url='https://www.royalroad.com',auto_login=True,login_data,cookies,headers):
+    def __init__(self,login_data,cookies,headers,base_url='https://www.royalroad.com',auto_login=True):
         self.base_url=base_url
 
         self.login_data = login_data
         self.cookies = cookies
         self.headers = headers
 
-        self.login_url='https://www.royalroad.com/account/login?returnurl=%2Fhome'
+        self.login_url=r'https://www.royalroad.com/account/login?returnurl=%2Fhome'
         if auto_login:
             self.auth()
         else:
@@ -32,7 +33,7 @@ class Crient:
                                                 headers=self.headers,
                                                 data=self.login_data)
                 self.login_response.raise_for_status()
-                
+
                 logger.info('Succussfully connected client ✅')
                 self.client=client
                 return
@@ -57,19 +58,48 @@ class Crient:
             except Exception as e:
                 logger.error('Something went wrong when trying to authenticate with POST ❌')
                 raise 
-            
-            def auth(self):
-        client = httpx.Client(follow_redirects=True)
-        logger.debug(f'''Trying to connect to {self.base_url+r"/account/login?returnurl=%2Fhome"} with:
-                       cookies: {self.cookies} 
-                       headers: {self.headers}
-                       login_data: {self.login_data}''')
-        self.login_response = client.post(self.base_url+r'/account/login?returnurl=%2Fhome',
-                                        cookies=self.cookies,headers=self.headers, data=self.login_data)
-        self.client=client
-        if self.login_response.status_code != 200:
-            self.logger.error(f'status code: {self.login_response.status_code}')
-            raise  RoyalRoadAuthError('Login failed')
-        else:
-            logger.info('Succussfully connected client')
+    def load_page(self,link,base_delay=1,max_retries=5,timeout=15,new_base=None):
+        url=(new_base or self.base_url) +link   #full_link
 
+        for tries in range(1,max_retries+1):
+            try:
+                page=self.client.get(url,timeout=timeout)
+                logger.debug(f'loaded:{url}')
+                if tries>1:
+                    logger.info(f'Successfully loaded:{url} after {tries} retries')
+                return page
+            except httpx.TimeoutException as e:
+                delay=base_delay*(2**tries)
+                logger.warning(f'''timeout excepcion for:{url} 
+                               \n retrying in {delay} , attempt {tries}/{max_retries}''')
+                if tries == max_retries:
+                    logger.error(f'Failed to load {url} after {max_retries} attempts')
+                    raise   
+                else:
+                    time.sleep(delay)
+            except httpx.HTTPStatusError as e:
+                delay=base_delay*(2**tries)
+                if e.response.status_code in [429, 500, 502, 503, 504]:
+                    logger.warning(f'''error status code: {e.response.status_code} link:{url} \n 
+                                   retrying in {delay} , attempt {tries}/{max_retries}''')
+                    if tries == max_retries:
+                        logger.error(f'Error status code: {e.response.status_code} {url} after {max_retries} attempts')
+                        raise   
+                    else:
+                        time.sleep(delay)
+                else:
+                    logger.error(f'error status code: {e.response.status_code} link:{url}')
+                    raise
+            except httpx.RequestError as e:
+                delay=base_delay*(2**tries)
+                logger.warning(f'''error during request to link:{url}\n
+                               retrying in {delay} , attempt {tries}/{max_retries}''')
+                if tries == max_retries:
+                    logger.error(f'Request issue, failed to load {url} after {max_retries} attempts')
+                    raise 
+                else:
+                    time.sleep(delay)
+            except Exception as e:
+                logger.error(f'unexpected error loading: {url}')
+                raise
+        
