@@ -1,4 +1,3 @@
-from re import L
 import time
 
 import httpx
@@ -6,7 +5,7 @@ import logging
 
 logger=logging.getLogger(__name__)
 
-class Crient:
+class Client:
     def __init__(self,login_data,cookies,headers,base_url='https://www.royalroad.com',auto_login=True):
         self.base_url=base_url
 
@@ -58,7 +57,13 @@ class Crient:
             except Exception as e:
                 logger.error('Something went wrong when trying to authenticate with POST ❌')
                 raise 
-    def load_page(self,link,base_delay=1,max_retries=5,timeout=15,new_base=None):
+    def load_page(self,
+                  link: str,
+                  base_delay: int=1,
+                  max_retries: int=5,
+                  timeout: int=15,
+                  new_base: str=None
+                  ) -> httpx.Response:
         url=(new_base or self.base_url) +link   #full_link
 
         for tries in range(1,max_retries+1):
@@ -101,5 +106,9 @@ class Crient:
                     time.sleep(delay)
             except Exception as e:
                 logger.error(f'unexpected error loading: {url}')
-                raise
-        
+                raise    
+    def close_client(self):
+        if isinstance(self.client, httpx.Client):
+            self.client.close_client()
+            self.client = None
+            print("Client connection closed.")
