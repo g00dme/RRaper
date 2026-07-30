@@ -32,8 +32,8 @@ class Parser:
                            first: str='h2',
                            first_class: str='fiction-title',
                            second:str='a'
-                           ) -> Tuple[List[Title],int]:
-        page=BeautifulSoup(response)
+                           ) -> Tuple[dict,int]:
+        page=BeautifulSoup(response, 'html.parser')
         titles={}
         skipped=0
         all_titles=page.find_all(first,class_=first_class)
@@ -45,7 +45,7 @@ class Parser:
             a=el.find(second)
             if a:
                 link=a.get('href')
-                titles[title]=link
+                titles[title]={'link':link}
             else:
                 logger.warning(f'{title} has no link')
                 skipped+=1
@@ -56,7 +56,7 @@ class Parser:
                        first: str='li',
                        first_class: str='bold uppercase',
                        second: str='li') -> dict:
-        soup=BeautifulSoup(response)
+        soup=BeautifulSoup(response, 'html.parser')
         elements=soup.find_all(first,class_=first_class)
         for el in elements:
             name=el.text.replace(':','').strip()
@@ -78,7 +78,7 @@ class Parser:
                     first_attr: str='data-original-title',
                     value_attr: str='aria-label'
                     ) -> dict:
-        soup=BeautifulSoup(response)
+        soup=BeautifulSoup(response, 'html.parser')
         elements=soup.find_all(first,attrs={first_attr:True})
         for el in elements:
             name=el.get(first_attr)
@@ -106,7 +106,7 @@ class Parser:
             
         metadata={}
         
-        soup=BeautifulSoup(response)
+        soup=BeautifulSoup(response, 'html.parser')
 
         # tags
         tags=soup.find_all(tags_tag,href=lambda x: x and contains in x)
