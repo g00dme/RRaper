@@ -8,6 +8,9 @@ wheels/
 
 #Personal
 config.json
+*.log
+*.db
+.ipynb
 
 # Virtual environments
 .venv
