@@ -1,12 +1,10 @@
 import logging
 from math import log
 import re
-import time
-from typing import List, Tuple
+from typing import Tuple
 from dataclasses import dataclass, field
 
 from bs4 import BeautifulSoup
-from h11 import Response
 import httpx
 
 def clean_spaces(string):
@@ -80,6 +78,17 @@ class Parser:
                     ) -> dict:
         soup=BeautifulSoup(response, 'html.parser')
         elements=soup.find_all(first,attrs={first_attr:True})
+        if 'This fiction has not received enough ratings yet to have a score.' in soup.text:
+            logger.info(f'Not enough ratings for scores on {response.url}')
+            return {
+            'Overall Score': None,  
+            'Style Score': None,
+            'Story Score': None,
+            'Grammar Score': None,
+            'Character Score': None
+            }
+        elif len(elements)==0:
+            logger.error(f'Did not find Scores on {response.url}')
         for el in elements:
             name=el.get(first_attr)
             raw_value=el.get(value_attr) 
@@ -89,7 +98,7 @@ class Parser:
             try:
                 match=re.search(r'\d+.?\d*',raw_value)
                 if not match:
-                    logger.warning(f'Cant extract number from {raw_value}, via re "\d+.?\d*"')
+                    logger.warning(fr'Cant extract number from {raw_value}, via re "\d+.?\d*"')
                     continue
                 value=float(match.group())
                 metadata[name]=value

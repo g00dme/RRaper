@@ -13,7 +13,7 @@ from modules.parser import *
 
 logger=logging.getLogger(__name__)
 
-class RRaper:
+class RRscraper:
     def __init__(self,login=True,base_url='https://www.royalroad.com'):
         self.load_config()
 
@@ -29,9 +29,11 @@ class RRaper:
         self.login_data = config['login_data']
         self.cookies = config['cookies']
         self.headers = config['headers']
+    # def save_to_db(self):
+
 
     def load_titles_from_index_page(self,
-                        link: str) -> dict:
+                                    link: str) -> dict:
         index_page_response=self.client.load_page(link)
         total_pages,_=self.parser.parse_pages(index_page_response)
 

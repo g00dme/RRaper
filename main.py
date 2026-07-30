@@ -1,6 +1,6 @@
 import logging
 
-from modules.scraper import RRaper
+from modules.scraper import RRscraper
 
 def configure_logging(level=logging.INFO):
     logging.basicConfig(filename='logs.log',
@@ -16,7 +16,7 @@ def configure_logging(level=logging.INFO):
 def main():
     configure_logging()
     
-    scraper=RRaper()
+    scraper=RRscraper()
 
     result=scraper.load_titles_from_index_page('/my/readlater')
     return result
