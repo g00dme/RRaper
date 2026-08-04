@@ -1,6 +1,7 @@
 import logging
 from math import log
 import re
+from datetime import datetime
 from typing import Tuple
 from dataclasses import dataclass, field
 
@@ -43,7 +44,8 @@ class Parser:
             a=el.find(second)
             if a:
                 link=a.get('href')
-                titles[title]={'link':link}
+                id=re.search(r'\d+',link).group()
+                titles[title]={'link':link,'id':id}
             else:
                 logger.warning(f'{title} has no link')
                 skipped+=1
@@ -57,7 +59,7 @@ class Parser:
         soup=BeautifulSoup(response, 'html.parser')
         elements=soup.find_all(first,class_=first_class)
         for el in elements:
-            name=el.text.replace(':','').strip()
+            name=el.text.replace(':','').strip().replace(' ','_')
             value=el.find_next_sibling(second)
             if not value:
                 logger.warning(f'cant find value of {name} in {el}, link: {response.url}')
@@ -80,17 +82,16 @@ class Parser:
         elements=soup.find_all(first,attrs={first_attr:True})
         if 'This fiction has not received enough ratings yet to have a score.' in soup.text:
             logger.info(f'Not enough ratings for scores on {response.url}')
-            return {
-            'Overall Score': None,  
-            'Style Score': None,
-            'Story Score': None,
-            'Grammar Score': None,
-            'Character Score': None
-            }
+            metadata['Overall_Score']= None
+            metadata['Style_Score']= None
+            metadata['Story_Score']= None
+            metadata['Grammar_Score']= None
+            metadata['Character_Score']= None
+            return metadata
         elif len(elements)==0:
             logger.error(f'Did not find Scores on {response.url}')
         for el in elements:
-            name=el.get(first_attr)
+            name=el.get(first_attr).strip().replace(' ','_')
             raw_value=el.get(value_attr) 
             if not raw_value:
                 logger.warning(f'element {name}, of {el} has no value in attr {value_attr}')
@@ -122,6 +123,7 @@ class Parser:
         if not tags:
             logger.warning(f'No tags found on page {response.url}')
         metadata['tags']=[tag.text for tag in tags]
+        metadata['time']=datetime.now().strftime('%Y-%m-%d-%H')
 
         self.parse_stars(response,metadata)
 

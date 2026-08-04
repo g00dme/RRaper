@@ -21,10 +21,6 @@ class Client:
     def auth(self,base_delay=1,max_retries=5):
         client = httpx.Client(follow_redirects=True)
         logger.info(f'Trying to connect to auth on {self.login_url}')
-        logger.debug(f'''Auth parameters:\n
-                        cookies: {self.cookies} 
-                        headers: {self.headers}
-                        login_data: {self.login_data}''')
         for tries in range(1,max_retries+1):
             try:
                 self.login_response = client.post(self.login_url,
@@ -68,11 +64,14 @@ class Client:
 
         for tries in range(1,max_retries+1):
             try:
-                page=self.client.get(url,timeout=timeout)
+                response=self.client.get(url,timeout=timeout)
                 logger.debug(f'loaded:{url}')
                 if tries>1:
                     logger.info(f'Successfully loaded:{url} after {tries} retries')
-                return page
+                if response.url !=url:
+                    logger.error(f'Loaded wrong page, {response.url}, instead of {url}')
+                    continue
+                return response
             except httpx.TimeoutException as e:
                 delay=base_delay*(2**tries)
                 logger.warning(f'''timeout excepcion for:{url} 
@@ -109,6 +108,6 @@ class Client:
                 raise    
     def close_client(self):
         if isinstance(self.client, httpx.Client):
-            self.client.close_client()
+            self.client.close()
             self.client = None
             print("Client connection closed.")
