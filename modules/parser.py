@@ -45,7 +45,7 @@ class Parser:
             if a:
                 link=a.get('href')
                 id=re.search(r'\d+',link).group()
-                titles[title]={'link':link,'id':id}
+                titles[title]={'link':link,'id':int(id)}
             else:
                 logger.warning(f'{title} has no link')
                 skipped+=1
@@ -123,7 +123,7 @@ class Parser:
         if not tags:
             logger.warning(f'No tags found on page {response.url}')
         metadata['tags']=[tag.text for tag in tags]
-        metadata['time']=datetime.now().strftime('%Y-%m-%d-%H')
+        metadata['time']=datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
         self.parse_stars(response,metadata)
 

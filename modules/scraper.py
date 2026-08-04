@@ -26,38 +26,34 @@ class RRscraper:
         self.headers = config['headers']
     # def load_titles_from_index_page(self,link):
     #     pass
-    # def get_links_to_index_pages(self,
-    #                              link: str,
-    #                              end_page: int=None):
-    #     first_page_response=self.client.load_page(link)
-    #     total_pages,_=self.parser.parse_pages(first_page_response)
-    #     if end_page and end_page < total_pages:
-    #         total_pages=end_page
-    #     index_pages_links=[f'{link}?page={page_number}' for page_number in range(2,total_pages+1)]
-    #     return index_pages_links, first_page_response
+    def get_links_to_index_pages(self,
+                                 link: str,
+                                 end_page: int=None):
+        first_page_response=self.client.load_page(link)
+        total_pages,_=self.parser.parse_pages(first_page_response)
+        if end_page and end_page < total_pages:
+            total_pages=end_page
+        index_pages_links=[f'{link}?page={page_number}' for page_number in range(2,total_pages+1)]
+        return index_pages_links, first_page_response
     def load_titles_from_index_page(self,
                                     link: str,
                                     end_page: int=None
                                     ) -> dict:
-        index_page_response=self.client.load_page(link)
-        total_pages,_=self.parser.parse_pages(index_page_response)
-        if end_page is not None and end_page<total_pages:
-            total_pages=end_page
-        # index_pages_links, index_page_response=self.get_links_to_index_pages(link,end_page)
+        index_pages_links, index_page_response=self.get_links_to_index_pages(link,end_page)
         all_titles={}
 
         loaded_titles,skipped=self.parser.parse_titles_links(index_page_response)
         all_titles=all_titles | loaded_titles
         logger.info(f'Loaded {len(loaded_titles)} titles, skipped {skipped}, page 1')
 
-        for x in range(2,total_pages+1):
-            page=self.client.load_page(f'{link}?page={x}')
+        for link in index_pages_links:
+            page=self.client.load_page(link)
             loaded_titles,skipped=self.parser.parse_titles_links(page)
             all_titles=all_titles | loaded_titles
             logger.info(f'loaded_titles: {loaded_titles}')
             logger.info(f'skiped: {skipped}')
 
-            logger.info(f'Loaded {len(loaded_titles)} titles, page {x}')
+            logger.info(f'Loaded {len(loaded_titles)} titles, page {link}')
 
             time.sleep(1)
         return all_titles
