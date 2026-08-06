@@ -44,7 +44,7 @@ class RRDB:
                 category TEXT,
                 PRIMARY KEY(title_id, category),
                 FOREIGN KEY(title_id) REFERENCES Titles(id) ON DELETE CASCADE);''')
-        self.con.commit()
+        self.con.commit()         
     def add_titles(self,
                     data: tuple):
         if not data:
@@ -69,8 +69,7 @@ class RRDB:
         return response
     def transform_titles(self,titles: dict) -> List[tuple]:
         data=[]
-        for title, meta in titles.items():
-            meta['title']=title
+        for id, meta in titles.items():
             if type(meta['tags'])==list:
                 meta['tags']="|".join(meta['tags'])
             values=tuple(meta.values())

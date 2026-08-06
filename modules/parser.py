@@ -2,7 +2,7 @@ import logging
 from math import log
 import re
 from datetime import datetime
-from typing import Tuple
+from typing import Any, Dict, Tuple
 from dataclasses import dataclass, field
 
 from bs4 import BeautifulSoup
@@ -31,7 +31,7 @@ class Parser:
                            first: str='h2',
                            first_class: str='fiction-title',
                            second:str='a'
-                           ) -> Tuple[dict,int]:
+                           ) -> Tuple[Dict[str,Any],int]:
         page=BeautifulSoup(response, 'html.parser')
         titles={}
         skipped=0
@@ -44,8 +44,8 @@ class Parser:
             a=el.find(second)
             if a:
                 link=a.get('href')
-                id=re.search(r'\d+',link).group()
-                titles[title]={'link':link,'id':int(id)}
+                id=int(re.search(r'\d+',link).group())
+                titles[id]={'link':link,'id':id}
             else:
                 logger.warning(f'{title} has no link')
                 skipped+=1
@@ -111,7 +111,7 @@ class Parser:
     def parse_meta(self,
                   response: httpx.Response,
                   tags_tag: str='a',
-                  contains: str='tagsAdd='
+                  tag_class: str='fiction-tag'
                   ) -> dict: 
             
         metadata={}
@@ -119,11 +119,17 @@ class Parser:
         soup=BeautifulSoup(response, 'html.parser')
 
         # tags
-        tags=soup.find_all(tags_tag,href=lambda x: x and contains in x)
+        tags=soup.find_all(tags_tag,class_=tag_class)
         if not tags:
             logger.warning(f'No tags found on page {response.url}')
         metadata['tags']=[tag.text for tag in tags]
         metadata['time']=datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+
+        title=soup.title
+        if title:
+            metadata['title']=title.text.split(' | ')[0].strip()
+        else:
+            logger.warning(f'cant find the title of {response.url}')
 
         self.parse_stars(response,metadata)
 

@@ -28,7 +28,7 @@ def main():
     
     scraper=RRscraper()
 
-    result=scraper.load_titles_to_db_from_index('/my/readlater',category='ReadLater',end_page=1,
+    result=scraper.load_titles_to_db(index_link='/my/readlater',category='ReadLater',
                                                 skip_less_then_days=7)
     return result,scraper
 if __name__ == "__main__":

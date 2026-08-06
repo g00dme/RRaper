@@ -58,10 +58,14 @@ class Client:
                   base_delay: int=1,
                   max_retries: int=5,
                   timeout: int=15,
-                  new_base: str=None
+                  new_base: str=None,
+                  write: bool=False,
+                  file_name: str='output.html'
                   ) -> httpx.Response:
-        url=(new_base or self.base_url) +link   #full_link
-
+        if link.startswith(('http://', 'https://')):
+            url = link
+        else:
+            url = (new_base or self.base_url) + link
         for tries in range(1,max_retries+1):
             try:
                 response=self.client.get(url,timeout=timeout)
@@ -71,6 +75,10 @@ class Client:
                 if response.url !=url:
                     logger.error(f'Loaded wrong page, {response.url}, instead of {url}')
                     continue
+                if write==True:
+                    with open(file_name,'w') as f:
+                        f.write(response.text)
+
                 return response
             except httpx.TimeoutException as e:
                 delay=base_delay*(2**tries)
